@@ -204,8 +204,7 @@ if (isset($_GET['username'])) {
     </div>
     <div class="container">
         <h1><?php echo $username; ?>'s Profile <i class="glyphicon glyphicon-ok-sign verified" data-toggle="tooltip" title="Verified User" style="font-size:28px;color:#da052b;"></i></h1></div>
-        
-</form>
+
     <div>
         <div class="container">
             <div class="row">
@@ -262,6 +261,7 @@ if (isset($_GET['username'])) {
             </div>
         </footer>
     </div>
+</body>
     <script src="assets/js/jquery.min.js"></script>
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="assets/js/bs-animation.js"></script>
