@@ -1,5 +1,7 @@
 <?php
 
+ include_once('Comment.php');
+
 
 class Post {
 
@@ -64,7 +66,7 @@ class Post {
                 if (!DB::query('SELECT user_id FROM post_likes WHERE post_id=:postid AND user_id=:userid', array(':postid'=>$postId, ':userid'=>$likerId))) {
                         DB::query('UPDATE posts SET likes=likes+1 WHERE id=:postid', array(':postid'=>$postId));
                         DB::query('INSERT INTO post_likes VALUES (\'\', :postid, :userid)', array(':postid'=>$postId, ':userid'=>$likerId));
-                        Notify::createNotify("", $postId);
+                        Self::createNotify("", $postId);
                 } else {
                         DB::query('UPDATE posts SET likes=likes-1 WHERE id=:postid', array(':postid'=>$postId));
                         DB::query('DELETE FROM post_likes WHERE post_id=:postid AND user_id=:userid', array(':postid'=>$postId, ':userid'=>$likerId));
@@ -90,7 +92,7 @@ class Post {
         public static function link_add($text) {
 
                 $text = explode(" ", $text);
-                $newstring = "";
+                $newstring = "<div class=\"text-primary lead\">";
 
                 foreach ($text as $word) {
                         if (substr($word, 0, 1) == "@") {
@@ -102,7 +104,7 @@ class Post {
                         }
                 }
 
-                return $newstring;
+                return $newstring."</div>";
         }
 
         public static function displayPosts($userid, $username, $loggedInUserId,$isAdmin) {
@@ -114,12 +116,12 @@ class Post {
                         if (!DB::query('SELECT post_id FROM post_likes WHERE post_id=:postid AND user_id=:userid', array(':postid'=>$p['id'], ':userid'=>$loggedInUserId))) {
 
                                 $posts .= "<img src='".$p['postimg']."'>".self::link_add($p['body'])."
-                                <form action='profile.php?username=$username&postid=".$p['id']."' method='post'>
-                                        <input type='submit' name='like' value='Like'>
-                                        <span>".$p['likes']." likes</span>
+                                <form class=\"form-group\" action='profile.php?username=$username&postid=".$p['id']."' method='post'>
+                                        <input class=\"btn btn-danger\" type='submit' name='like' value='Like'>
+                                        <span class=\"text-danger\">".$p['likes']." likes</span>
                                 ";
                                 if ($userid == $loggedInUserId || $isAdmin) {
-                                        $posts .= "<input type='submit' name='deletepost' value='x' />";
+                                        $posts .= "<input class=\"btn btn-danger\"  type='submit' name='deletepost' value='x' />";
                                 }
                                 $posts .= "
                                 </form><hr /></br />
@@ -128,11 +130,11 @@ class Post {
                         } else {
                                 $posts .= "<img src='".$p['postimg']."'>".self::link_add($p['body'])."
                                 <form action='profile.php?username=$username&postid=".$p['id']."' method='post'>
-                                <input type='submit' name='unlike' value='Unlike'>
-                                <span>".$p['likes']." likes</span>
+                                <input class=\"btn btn-danger\"  type='submit' name='unlike' value='Unlike'>
+                                <span class=\"text-danger\" >".$p['likes']." likes</span>
                                 ";
                                 if ($userid == $loggedInUserId) {
-                                        $posts .= "<input type='submit' name='deletepost' value='x' />";
+                                        $posts .= "<input class=\"btn btn-danger\"  type='submit' name='deletepost' value='x' />";
                                 }
                                 $posts .= "
                                 </form><hr /></br />
@@ -142,6 +144,59 @@ class Post {
 
                 return $posts;
         }
+
+        public static function display($posts){
+
+                foreach($posts as $post) {
+
+                    echo "<div class=\"lead text-primary\">".$post['body']. " 
+                          <p>Posted BY ".$post['username']."</p></div>";
+                    echo "<form action='index.php?postid=".$post['id']."' class=\"form-group\" method='post'>";
+
+                    if (!DB::query('SELECT post_id FROM post_likes WHERE post_id=:postid', array(':postid'=>$post['id']))) {
+
+                    echo "<input type='submit' class=\"btn btn-danger\" name='like' value='Like'>";
+                    } else {
+                    echo "<input type='submit' class=\"btn btn-danger\" name='unlike' value='Unlike'>";
+                    }
+                    echo "<span class=\"text-danger\">".$post['likes']." likes</span>
+                    </form>
+                    <form action='index.php?postid=".$post['id']."' class=\"form-group\"  method='post'>
+                    <textarea  class=\"form-control\" name='commentbody' rows='3' cols='50'></textarea>
+                    <div >  
+                    <input type='submit' name='comment' class=\"btn btn-success\" value='Comment'>
+                     </div>
+                   
+                    </form>
+                    ";
+                    Comment::displayComments($post['id']);
+                    echo "
+                    <hr /></br />";
+
+                 }
+        }
+
+        public static function createNotify($text = "", $postid = 0) {
+                $text = explode(" ", $text);
+                $notify = array();
+
+                foreach ($text as $word) {
+                        if (substr($word, 0, 1) == "@") {
+                                $notify[substr($word, 1)] = array("type"=>1, "extra"=>' { "postbody": "'.htmlentities(implode($text, " ")).'" } ');
+                        }
+                }
+
+                if (count($text) == 1 && $postid != 0) {
+                        $temp = DB::query('SELECT posts.user_id AS receiver, post_likes.user_id AS sender FROM posts, post_likes WHERE posts.id = post_likes.post_id AND posts.id=:postid', array(':postid'=>$postid));
+                        $r = $temp[0]["receiver"];
+                        $s = $temp[0]["sender"];
+                        DB::query('INSERT INTO notifications VALUES (\'\', :type, :receiver, :sender, :extra)', array(':type'=>2, ':receiver'=>$r, ':sender'=>$s, ':extra'=>""));
+                }
+
+                return $notify;
+        }
+
+
 
 }
 ?>

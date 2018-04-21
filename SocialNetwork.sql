@@ -172,40 +172,6 @@ CREATE TABLE `users` (
 
 
 
-# Dump of table private_settings
-# ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `private_settings`;
-
-CREATE TABLE `private_settings` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) unsigned NOT NULL,
-  `public` tinyint(1) unsigned NOT NULL,
-  `private` tinyint(1) unsigned NOT NULL,
-  `friends` tinyint(1) unsigned NOT NULL,
-  `fofs` tinyint(1) unsigned NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
-
-# Dump of table admin
-# ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `admins`;
-
-CREATE TABLE `admins` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) unsigned NOT NULL,
-  `username` varchar(40) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
 
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

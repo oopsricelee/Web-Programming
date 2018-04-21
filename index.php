@@ -1,10 +1,12 @@
 <?php
-include('./classes/DB.php');
+include_once('./classes/DB.php');
 include('./classes/Login.php');
 include('./classes/Post.php');
-include('./classes/Comment.php');
+include_once('./classes/Comment.php');
+
 $showTimeline = False;
 $isAdmin = False;
+$search = False;
 if (Login::isLoggedIn()) {
         $userid = Login::isLoggedIn();
         $username = DB::query('SELECT username FROM users WHERE id = :userid', array(':userid'=>$userid))[0]['username'];
@@ -23,18 +25,19 @@ if (isset($_POST['comment'])) {
 }
 
 if (isset($_POST['searchbox'])) {
+        $search = True;
         $tosearch = explode(" ", $_POST['searchbox']);
         if (count($tosearch) == 1) {
                 $tosearch = str_split($tosearch[0], 2);
         }
-        $whereclause = "";
-        $paramsarray = array(':username'=>'%'.$_POST['searchbox'].'%');
-        for ($i = 0; $i < count($tosearch); $i++) {
-                $whereclause .= " OR username LIKE :u$i ";
-                $paramsarray[":u$i"] = $tosearch[$i];
-        }
-        $users = DB::query('SELECT users.username FROM users WHERE users.username LIKE :username '.$whereclause.'', $paramsarray);
-        print_r($users);
+        // $whereclause = "";
+        // $paramsarray = array(':username'=>'%'.$_POST['searchbox'].'%');
+        // for ($i = 0; $i < count($tosearch); $i++) {
+        //         $whereclause .= " OR username LIKE :u$i ";
+        //         $paramsarray[":u$i"] = $tosearch[$i];
+        // }
+        // $users = DB::query('SELECT users.username FROM users WHERE users.username LIKE :username '.$whereclause.'', $paramsarray);
+        //print_r($users);
 
         $whereclause = "";
         $paramsarray = array(':body'=>'%'.$_POST['searchbox'].'%');
@@ -44,18 +47,15 @@ if (isset($_POST['searchbox'])) {
                 $paramsarray[":p$i"] = $tosearch[$i];
                 }
         }
-        $posts = DB::query('SELECT posts.body FROM posts WHERE posts.body LIKE :body '.$whereclause.'', $paramsarray);
-        echo '<pre>';
-        print_r($posts);
-        echo '</pre>';
+          $posts = DB::query('SELECT posts.id, posts.body, posts.likes, users.username 
+            FROM posts,users 
+            WHERE posts.user_id = users.id AND
+            posts.body LIKE :body '.$whereclause.'ORDER BY id DESC'
+            , $paramsarray);
 }
 
 ?>
 
-<form action="index.php" method="post">
-        <input type="text" name="searchbox" value="">
-        <input type="submit" name="search" value="Search">
-</form>
 
 
 
@@ -110,7 +110,7 @@ if (isset($_POST['searchbox'])) {
                 <div class="collapse navbar-collapse" id="navcol-1">
                     <form class="navbar-form navbar-left" action="index.php" method="post">
                         <div class="searchbox"><i class="glyphicon glyphicon-search"></i>
-                            <input class="form-control sbox" type="text">
+                            <input class="form-control sbox" name="searchbox" type="text">                    
                             <ul class="list-group autocomplete" style="position:absolute;width:100%; z-index:100">
                             </ul>
                         </div>
@@ -150,7 +150,6 @@ if (isset($_POST['searchbox'])) {
                             echo "<li class=\"dropdown\"><a class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-expanded=\"false\" href=\"#\">User<span class=\"caret\"></span></a>";
                         }
                         ?>
-<!--                         <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" href="#">User <span class="caret"></span></a> -->
                             <ul class="dropdown-menu dropdown-menu-right" role="menu">
                                 <li role="presentation"><a href="profile.php?username=<?php echo($username); ?>">My Profile</a></li>
                                 <li class="divider" role="presentation"></li>
@@ -179,33 +178,38 @@ if (isset($_POST['searchbox'])) {
 
     <div class="container">
         <h1>Timeline </h1>
+        <hr /></br />
         <div class="timelineposts">
         <?php
-        if (Login::isLoggedIn()){
+        if (Login::isLoggedIn() && !$search){
             $followingposts = DB::query('SELECT posts.id, posts.body, posts.likes, users.`username` FROM users, posts, followers, private_settings
             WHERE posts.user_id = followers.user_id
             AND users.id = posts.user_id
             AND users.id = private_settings.id
-            AND follower_id = :userid
-            AND (private_settings.friends = 1 || private_settings.public = 1)
-            ORDER BY posts.likes DESC;', array(':userid'=>$userid));
+            AND private_settings.public = 1 
+            OR  (follower_id = :userid
+            AND private_settings.friends = 1)
+            ORDER BY posts.likes DESC', array(':userid'=>$userid));
 
             foreach($followingposts as $post) {
 
-                    echo $post['body']." ~ ".$post['username'];
-                    echo "<form action='index.php?postid=".$post['id']."' method='post'>";
+                    echo "<div class=\"text-primary lead\">".$post['body']. " 
+                           <p>Posted By ".$post['username']."</p></div>";
+                    echo "<form action='index.php?postid=".$post['id']."' class=\"form-group\" method='post'>";
 
                     if (!DB::query('SELECT post_id FROM post_likes WHERE post_id=:postid AND user_id=:userid', array(':postid'=>$post['id'], ':userid'=>$userid))) {
 
-                    echo "<input type='submit' name='like' value='Like'>";
+                    echo "<input type='submit' class=\"btn btn-danger\" name='like' value='Like'>";
                     } else {
-                    echo "<input type='submit' name='unlike' value='Unlike'>";
+                    echo "<input type='submit' class=\"btn btn-danger\" name='unlike' value='Unlike'>";
                     }
-                    echo "<span>".$post['likes']." likes</span>
+                    echo "<span class=\"text-danger\">".$post['likes']." likes</span>
                     </form>
-                    <form action='index.php?postid=".$post['id']."' method='post'>
-                    <textarea name='commentbody' rows='3' cols='50'></textarea>
-                    <input type='submit' name='comment' value='Comment'>
+                    <form action='index.php?postid=".$post['id']."' class=\"form-group\"  method='post'>
+                    <textarea  class=\"form-control\" name='commentbody' rows='3' cols='50'></textarea>
+                    <div >  
+                    <input type='submit' name='comment' class=\"btn btn-success\" value='Comment'>
+                     </div>
                     </form>
                     ";
                     Comment::displayComments($post['id']);
@@ -216,7 +220,7 @@ if (isset($_POST['searchbox'])) {
             }
         }
 
-        else{
+        else if (!Login::isLoggedIn()&&!$search) {
             $publicposts = DB::query('SELECT posts.id, posts.body, posts.likes, users.username FROM users, posts, followers,private_settings
             WHERE posts.user_id = followers.user_id
             AND users.id = posts.user_id
@@ -226,24 +230,34 @@ if (isset($_POST['searchbox'])) {
             displayposts($publicposts);
         }
 
+        else{
+            
+            displayposts($posts);
+        }
+
 
         function displayposts($posts)
         {
             foreach($posts as $post) {
 
-                    echo $post['body']." ~ ".$post['username'];
-                    echo "<form action='index.php?postid=".$post['id']."' method='post'>";
+                    echo "<div class=\"lead text-primary\">".$post['body']. " 
+                          <p>Posted By ".$post['username']."</p></div>";
+                    echo "<form action='index.php?postid=".$post['id']."' class=\"form-group\" method='post'>";
 
                     if (!DB::query('SELECT post_id FROM post_likes WHERE post_id=:postid', array(':postid'=>$post['id']))) {
-                    echo "<input type='submit' name='like' value='Like'>";
+
+                    echo "<input type='submit' class=\"btn btn-danger\" name='like' value='Like'>";
                     } else {
-                    echo "<input type='submit' name='unlike' value='Unlike'>";
+                    echo "<input type='submit' class=\"btn btn-danger\" name='unlike' value='Unlike'>";
                     }
-                    echo "<span>".$post['likes']." likes</span>
+                    echo "<span class=\"text-danger\">".$post['likes']." likes</span>
                     </form>
-                    <form action='index.php?postid=".$post['id']."' method='post'>
-                    <textarea name='commentbody' rows='3' cols='50'></textarea>
-                    <input type='submit' name='comment' value='Comment'>
+                    <form action='index.php?postid=".$post['id']."' class=\"form-group\"  method='post'>
+                    <textarea  class=\"form-control\" name='commentbody' rows='3' cols='50'></textarea>
+                    <div >  
+                    <input type='submit' name='comment' class=\"btn btn-success\" value='Comment'>
+                     </div>
+                   
                     </form>
                     ";
                     Comment::displayComments($post['id']);

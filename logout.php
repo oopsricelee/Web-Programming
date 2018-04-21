@@ -24,9 +24,37 @@ if (isset($_POST['confirm'])) {
 }
 
 ?>
-<h1>Logout of your Account?</h1>
-<p>Are you sure you'd like to logout?</p>
-<form action="logout.php" method="post">
-        <input type="checkbox" name="alldevices" value="alldevices"> Logout of all devices?<br />
-        <input type="submit" name="confirm" value="Confirm">
-</form>
+<!DOCTYPE html>
+<html>
+<head>
+        <title>Logout</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/fonts/ionicons.min.css">
+    <link rel="stylesheet" href="assets/css/Footer-Dark.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.1.1/aos.css">
+    <link rel="stylesheet" href="assets/css/Login-Form-Clean.css">
+    <link rel="stylesheet" href="assets/css/Navigation-Clean1.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/message.css">
+</head>
+<body>
+
+<h1>Logout of your Account ?</h1>
+
+<hr><br>
+
+<div class="container">
+  <form action="logout.php" method="Post">
+    <div class="checkbox">
+      <label><input type="checkbox" name="alldevices" value="alldevices"> All Devices </label>
+    </div>
+    <input class="btn btn-danger" type="submit" name="confirm" value="Confirm">
+  </form>
+</div>
+
+
+
+
+</body>
+</html>
+

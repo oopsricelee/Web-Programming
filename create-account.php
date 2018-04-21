@@ -18,8 +18,11 @@ if (isset($_POST['createaccount'])) {
 
                                 if (!DB::query('SELECT email FROM users WHERE email=:email', array(':email'=>$email))) {
 
-                                        DB::query('INSERT INTO users VALUES (NULL, :username, :password, :email, \'0\', \'\')', array(':username'=>$username, ':password'=>password_hash($password, PASSWORD_BCRYPT), ':email'=>$email));
+                                        DB::query('INSERT INTO users VALUES (\'\', :username, :password, :email, \'0\', \'\')', array(':username'=>$username, ':password'=>password_hash($password, PASSWORD_BCRYPT), ':email'=>$email));
                                         echo "Success!";
+                                        $userid = DB::query('SELECT id FROM users WHERE users.username = :username',array(':username'=>$username))[0]['id'];
+                                        DB::query('INSERT INTO private_settings VALUES(NULL, :userid, 1,0,0,0)', array(':userid'=>$userid));
+                                        
                                 } else {
                                         echo 'Email in use!';
                                 }

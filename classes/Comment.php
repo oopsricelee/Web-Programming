@@ -18,7 +18,7 @@ class Comment {
 
                 $comments = DB::query('SELECT comments.comment, users.username FROM comments, users WHERE post_id = :postid AND comments.user_id = users.id', array(':postid'=>$postId));
                 foreach($comments as $comment) {
-                        echo $comment['comment']." ~ ".$comment['username']."<hr />";
+                        echo "<div class=\"lead text-muted\">".$comment['comment']." ~ ".$comment['username']."</div>"."<hr />";
                 }
         }
 }

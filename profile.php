@@ -9,7 +9,9 @@ $username = "";
 $verified = False;
 $isFollowing = False;
 $post = False;
+$search = False;
 $isAdmin = False;
+$_FILES['postimg']['size'] = "";
 
 if (isset($_GET['username'])) {
         if (DB::query('SELECT username FROM users WHERE username=:username', array(':username'=>$_GET['username']))) {
@@ -59,7 +61,6 @@ if (isset($_GET['username'])) {
                         if (DB::query('SELECT id FROM posts WHERE id=:postid AND user_id=:userid', array(':postid'=>$_GET['postid'], ':userid'=>$followerid))) {
                                 DB::query('DELETE FROM posts WHERE id=:postid and user_id=:userid', array(':postid'=>$_GET['postid'], ':userid'=>$followerid));
                                 DB::query('DELETE FROM post_likes WHERE post_id=:postid', array(':postid'=>$_GET['postid']));
-                                echo 'Post deleted!';
                         }
                 }
 
@@ -97,13 +98,45 @@ if (isset($_GET['username'])) {
                       $posts = Post::displayPosts($userid, $username, $followerid, $isAdmin);
                 }
 
-                
+                if (isset($_POST['searchbox'])) {
+                    $search = True;
+                    $tosearch = explode(" ", $_POST['searchbox']);
+                    if (count($tosearch) == 1) {
+                            $tosearch = str_split($tosearch[0], 2);
+                    }
+                    // $whereclause = "";
+                    // $paramsarray = array(':username'=>'%'.$_POST['searchbox'].'%');
+                    // for ($i = 0; $i < count($tosearch); $i++) {
+                    //         $whereclause .= " OR username LIKE :u$i ";
+                    //         $paramsarray[":u$i"] = $tosearch[$i];
+                    // }
+                    // $users = DB::query('SELECT users.username FROM users WHERE users.username LIKE :username '.$whereclause.'', $paramsarray);
+                    //print_r($users);
 
+                    $whereclause = "";
+                    $paramsarray = array(':body'=>'%'.$_POST['searchbox'].'%');
+                    for ($i = 0; $i < count($tosearch); $i++) {
+                            if ($i % 2) {
+                            $whereclause .= " OR body LIKE :p$i ";
+                            $paramsarray[":p$i"] = $tosearch[$i];
+                            }
+                    }
+                    $paramsarray[":userid"] = $userid;
+                    $posts = DB::query('SELECT posts.id, posts.body, posts.likes, users.username 
+                        FROM posts,users 
+                        WHERE posts.user_id = users.id AND
+                        users.id = :userid AND 
+                        posts.body LIKE :body '.$whereclause.'ORDER BY id DESC'
+                        , $paramsarray);
+
+            }
 
         } else {
                 die('User not found!');
         }
 }
+
+
 
 ?>
 
@@ -160,26 +193,12 @@ if (isset($_GET['username'])) {
                     <button class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navcol-1"><span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button>
                 </div>
                 <div class="collapse navbar-collapse" id="navcol-1">
-                    <form class="navbar-form navbar-left">
+                    <form class="navbar-form navbar-left" method="post" action="profile.php?username=<?php echo($username); ?>">
                         <div class="searchbox"><i class="glyphicon glyphicon-search"></i>
-                            <input class="form-control" type="text">
+                            <input class="form-control" name="searchbox" type="text">
                         </div>
                     </form>
                     <ul class="nav navbar-nav hidden-md hidden-lg navbar-right">
-                        <li role="presentation"><a href="#">My Timeline</a></li>
-                        <li class="dropdown open"><a class="dropdown-toggle" data-toggle="dropdown" aria-expanded="true" href="#">User <span class="caret"></span></a>
-                            <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                                <li role="presentation"><a href="#">My Profile</a></li>
-                                <li class="divider" role="presentation"></li>
-                                <li role="presentation"><a href="#">Timeline </a></li>
-                                <li role="presentation"><a href="#">Messages </a></li>
-                                <li role="presentation"><a href="#">Notifications </a></li>
-                                <li role="presentation"><a href="#">My Account</a></li>
-                                <li role="presentation"><a href="#">Logout </a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <ul class="nav navbar-nav hidden-xs hidden-sm navbar-right">
                         <li class="active" role="presentation"><a href="#">Timeline</a></li>
                         <li role="presentation"><a href="my-messages.php">Messages</a></li>
                         <li role="presentation"><a href="notify.php">Notifications</a></li>
@@ -188,7 +207,7 @@ if (isset($_GET['username'])) {
                                 <li role="presentation"><a href="profile.php?username=<?php echo($followername); ?>">My Profile</a></li>
                                 <li class="divider" role="presentation"></li>
                                 <li role="presentation"><a href="#">Timeline </a></li>
-                                <li role="presentation"><a href="my-messages.php">Messages </a></li>
+                                <li role="presentation"><a href="send-message.php?reciever=<?php echo($userid); ?>">Send Messages </a></li>
                                 <li role="presentation"><a href="notify.php">Notifications </a></li>                               
                                 <?php 
 
@@ -201,6 +220,43 @@ if (isset($_GET['username'])) {
 
                                 if($userid == $followerid)
                                     echo "<li role=\"presentation\"><a href=\"private_settings.php\">Private Settings </a></li>";
+
+                                if (Login::isLoggedIn()){
+                                        echo "<li role=\"presentation\"><a href=\"logout.php\">Logout </a></li>";
+                                        // if ($isFollowing) echo "<li role=\"presentation\"><a href=\"send-message.php?reciever=$userid\">Send Messages </a></li>";;
+                                }
+                                else{
+                                         echo "<li role=\"presentation\"><a href=\"login.php\">Login </a></li>";
+                                }
+
+                                 ?>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                    <ul class="nav navbar-nav hidden-xs hidden-sm navbar-right">
+                        <li class="active" role="presentation"><a href="#">Timeline</a></li>
+                        <li role="presentation"><a href="my-messages.php">Messages</a></li>
+                        <li role="presentation"><a href="notify.php">Notifications</a></li>
+                        <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" href="#">User <span class="caret"></span></a>
+                            <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                <li role="presentation"><a href="profile.php?username=<?php echo($followername); ?>">My Profile</a></li>
+                                <li class="divider" role="presentation"></li>
+                                <li role="presentation"><a href="#">Timeline </a></li>
+                                <li role="presentation"><a href="send-message.php?reciever=<?php echo($userid); ?>">Send Messages </a></li>
+                                <li role="presentation"><a href="notify.php">Notifications </a></li>                               
+                                <?php 
+
+                                if ($isAdmin){
+
+                                     echo "<li role=\"presentation\"><a href='delete-account.php?userid=$userid'>Delete User Account </a></li>";
+                                      echo "<li role=\"presentation\"><a href='update-account.php?userid=$userid'>Update User Account </a></li>";
+                                     
+                                 }                             
+
+                                if($userid == $followerid)
+                                    echo "<li role=\"presentation\"><a href=\"private_settings.php\">Private Settings </a></li>";
+
 
                                 if (Login::isLoggedIn()){
                                         echo "<li role=\"presentation\"><a href=\"logout.php\">Logout </a></li>";
@@ -244,7 +300,10 @@ if (isset($_GET['username'])) {
                 </div>
                 <div class="col-md-6">
                     <ul class="list-group">
-                        <?php if ($post) {echo $posts;} ?>
+                        <?php if ($post) {
+                              if (!$search) {echo $posts;}
+                              else {Post::display($posts);}
+                              } ?>
                     </ul>
                 </div>
                 <div class="col-md-3">
