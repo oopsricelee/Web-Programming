@@ -24,13 +24,48 @@ if (isset($_POST['login'])) {
     } else {
         echo 'User not registered!';
     }
+
 }
+
 ?>
-<h1>Login to your account</h1>
-<form action="login.php" method="post">
-    <input type="text" name="username" value="" placeholder="Username ...">
-    <p/>
-    <input type="password" name="password" value="" placeholder="Password ...">
-    <p/>
-    <input type="submit" name="login" value="Login">
-</form>
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/fonts/ionicons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css">
+    <link rel="stylesheet" href="assets/css/Login-Form-Clean.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <title>SocialNetwork</title>
+</head>
+
+<body>
+<div class="login-clean">
+    <form method="post">
+        <h2 class="sr-only">Login Form</h2>
+        <div class="illustration"><i class="icon ion-ios-navigate"></i></div>
+        <div class="form-group">
+            <input class="form-control" type="text" id="username" name="username" placeholder="Username">
+        </div>
+        <div class="form-group">
+            <input class="form-control" type="password" id="password" name="password" placeholder="Password">
+        </div>
+        <div class="form-group">
+            <button class="btn btn-primary btn-block" name="login" type="submit" value="Login" data-bs-hover-animate="shake">
+                Log In
+            </button>
+        </div>
+<!--        <a href="#" class="forgot">Forgot your email or password?</a>-->
+    </form>
+</div>
+<script src="assets/js/jquery.min.js"></script>
+<script src="assets/bootstrap/js/bootstrap.min.js"></script>
+
+</body>
+
+</html>
+

@@ -35,7 +35,7 @@ if (isset($_POST['confirm'])) {
     <link rel="stylesheet" href="assets/css/Login-Form-Clean.css">
     <link rel="stylesheet" href="assets/css/Navigation-Clean1.css">
     <link rel="stylesheet" href="assets/css/styles.css">
-    <link rel="stylesheet" href="assets/css/message.css">
+<!--    <link rel="stylesheet" href="assets/css/message.css">-->
 </head>
 <body>
 

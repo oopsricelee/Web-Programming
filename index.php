@@ -3,6 +3,7 @@ include_once('./classes/DB.php');
 include('./classes/Login.php');
 include('./classes/Post.php');
 include_once('./classes/Comment.php');
+include_once('./classes/Image.php');
 
 $showTimeline = False;
 $isAdmin = False;
@@ -21,7 +22,30 @@ if (isset($_GET['postid'])) {
     Post::likePost($_GET['postid'], $userid);
 }
 if (isset($_POST['comment'])) {
-    Comment::createComment($_POST['commentbody'], $_GET['postid'], $userid);
+    if ($_FILES['commentimg']['size'] == 0) {
+        Comment::createImgComment($_POST['commentbody'], $_GET['postid'], $userid);
+    } else {
+        $name = $_FILES['commentimg']['name'];
+        $temp = $_FILES['commentimg']['tmp_name'];
+        $tp = $_FILES['commentimg']['type'];
+        if (($tp == "image/gif") || ($tp == "image/jpeg")
+            || ($tp == "image/pjpeg") || ($tp == "image/png")) {
+            $commentid = Comment::createImgComment($_POST['commentbody'], $_GET['postid'], $userid);
+            Image::uploadImage('commentimg', "UPDATE comments SET commentimg=:commentimg WHERE id=:commentid", array(':commentid' => $commentid));
+        } else {
+            echo " Video";
+            $newloc = 'uploaded/';
+            if ($_FILES["file"]["error"] > 0) echo "Error: " . $_FILES["file"]["error"] . "<br />";
+            $newloc .= $name;
+            move_uploaded_file($temp, $newloc);
+            $commentid = Comment::createImgComment($_POST['commentbody'], $_GET['postid'], $userid);
+            DB::query("UPDATE comments SET commentimg=:commentimg WHERE id=:commentid", array(':commentid' => $commentid, ':commentimg' => $newloc));
+
+        }
+
+
+    }
+    // Comment::createComment($_POST['commentbody'], $_GET['postid'], $userid);
 }
 
 if (isset($_POST['searchbox'])) {
@@ -184,14 +208,28 @@ if (isset($_POST['searchbox'])) {
     <div class="timelineposts">
         <?php
         if (Login::isLoggedIn() && !$search) {
-            $followingposts = DB::query('SELECT posts.id, posts.body, posts.likes, users.`username` FROM users, posts, followers, private_settings
-            WHERE posts.user_id = followers.user_id
-            AND users.id = posts.user_id
-            AND users.id = private_settings.id
-            AND private_settings.public = 1 
-            OR  (follower_id = :userid
-            AND private_settings.friends = 1)
-            ORDER BY posts.likes DESC', array(':userid' => $userid));
+//            $followingposts = DB::query('SELECT posts.id, posts.body, posts.likes, posts.privacy, users.username
+//            FROM users JOIN posts ON users.id = posts.user_id
+//            JOIN followers
+//            WHERE (posts.privacy = 0 AND users.id = followers.user_id)
+//            OR  (posts.privacy = 1 AND posts.user_id = followers.user_id
+//            AND posts.user_id = :userid)
+//            OR (posts.privacy = 2
+//            AND (followers.follower_id = posts.user_id AND followers.user_id = :userid))
+//            ORDER BY posts.likes DESC', array(':userid' => $userid));
+
+            $followingposts = DB::query('SELECT posts.id, posts.body, posts.likes, posts.privacy, users.username
+            FROM users JOIN posts ON users.id = posts.user_id
+            JOIN followers
+            WHERE posts.privacy = 2
+            AND followers.follower_id = posts.user_id
+            AND followers.user_id = :userid
+            UNION
+            SELECT posts.id, posts.body, posts.likes, posts.privacy, users.username
+            FROM users JOIN posts ON users.id = posts.user_id
+            WHERE (posts.privacy = 1 AND posts.user_id = :userid)
+            OR posts.privacy = 0', array(':userid' => $userid));
+
 
             foreach ($followingposts as $post) {
 
@@ -207,9 +245,16 @@ if (isset($_POST['searchbox'])) {
                 }
                 echo "<span class=\"text-danger\">" . $post['likes'] . " likes</span>
                     </form>
-                    <form action='index.php?postid=" . $post['id'] . "' class=\"form-group\"  method='post'>
+                    <form action='index.php?postid=" . $post['id'] . "' class=\"form-group\"  method='post'  enctype=\"multipart/form-data\">
                     <textarea  class=\"form-control\" name='commentbody' rows='3' cols='50'></textarea>
-                    <div >  
+                    
+                     <div class=\"form-group\">
+                               <br />Upload image or video:
+                        </div>
+                     <div class=\"form-group\">
+                               <input type=\"file\" class=\"btn btn-info\" name=\"commentimg\"> 
+                        </div>
+                        <div class=\"form-group\" >  
                     <input type='submit' name='comment' class=\"btn btn-success\" value='Comment'>
                      </div>
                     </form>
@@ -221,11 +266,8 @@ if (isset($_POST['searchbox'])) {
 
             }
         } else if (!Login::isLoggedIn() && !$search) {
-            $publicposts = DB::query('SELECT posts.id, posts.body, posts.likes, users.username FROM users, posts, followers,private_settings
-            WHERE posts.user_id = followers.user_id
-            AND users.id = posts.user_id
-            AND private_settings.user_id = users.id
-            AND private_settings.public = 1
+            $publicposts = DB::query('SELECT posts.id, posts.body, posts.likes, posts.privacy, users.username FROM users, posts, followers
+            WHERE posts.privacy = 0
             ORDER BY posts.likes DESC');
             displayposts($publicposts);
         } else {
@@ -272,7 +314,7 @@ if (isset($_POST['searchbox'])) {
     </div>
 </div>
 
-<div class="footer-dark navbar-fixed-bottom" style="position: absolute">
+<div class="footer-dark navbar-fixed-bottom" style="position: relative">
     <footer>
         <div class="container">
             <p class="copyright">Social Network© 2018</p>
