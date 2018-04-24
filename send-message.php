@@ -4,9 +4,11 @@ include('./classes/Login.php');
 
 $receiver = htmlspecialchars($_GET['receiver']);
 
+$isAdmin = False;
 if (Login::isLoggedIn()) {
     $userid = Login::isLoggedIn();
     $username = DB::query('SELECT username FROM users WHERE id = :userid', array(':userid' => $userid))[0]['username'];
+    if (DB::query('SELECT username FROM admins WHERE username=:username', array(':username' => $username))) $isAdmin = True;
 } else {
     die('Not logged in');
 }
@@ -42,8 +44,9 @@ if (isset($_POST['send'])) {
 <div>
     <nav class="navbar navbar-default hidden-xs navigation-clean">
         <div class="container">
-            <div class="navbar-header"><a class="navbar-brand navbar-link" href="#"><i
-                            class="icon ion-ios-navigate"></i></a>
+            <div class="navbar-header"><a class="navbar-brand navbar-link"
+                                          href="profile.php?username=<?php echo $username ?>"><i
+                            class="icon ion-ios-people"></i></a>
                 <button class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navcol-1"><span
                             class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span
                             class="icon-bar"></span><span class="icon-bar"></span></button>
@@ -73,15 +76,12 @@ if (isset($_POST['send'])) {
                     }
                     ?>
                     <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                        <li role="presentation"><a href="profile.php?username=<?php echo($username); ?>">My Profile</a>
-                        </li>
-                        <li class="divider" role="presentation"></li>
                         <?php if (Login::isLoggedIn()) {
+                            if ($isAdmin) echo "<li role=\"presentation\"><a href=\"userlist.php\">UserList</a></li>";
                             echo "<li role=\"presentation\"><a href=\"logout.php\">Logout </a></li>";
                         } else {
                             echo "<li role=\"presentation\"><a href=\"login.php\">Login </a></li>";
                         }
-                        if ($isAdmin) echo "<li role=\"presentation\"><a href=\"userlist.php\">UserList</a></li>";
                         ?>
                     </ul>
                 </ul>
@@ -103,10 +103,14 @@ if (isset($_POST['send'])) {
 <div class="footer-dark navbar-fixed-bottom" style="position: absolute">
     <footer>
         <div class="container">
-            <p class="copyright">Social Network© 2018</p>
+            <p class="copyright">Social Network</p>
         </div>
     </footer>
 </div>
+<script src="assets/js/jquery.min.js"></script>
+<script src="assets/bootstrap/js/bootstrap.min.js"></script>
+<script src="assets/js/bs-animation.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.1.1/aos.js"></script>
 
 </body>
 </html>

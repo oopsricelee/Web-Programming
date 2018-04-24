@@ -12,13 +12,14 @@ $post = False;
 $search = False;
 $isAdmin = False;
 $privacy;
-$_FILES['postimg']['size'] = "";
+
 
 if (isset($_GET['username'])) {
     if (DB::query('SELECT username FROM users WHERE username=:username', array(':username' => $_GET['username']))) {
 
         $username = DB::query('SELECT username FROM users WHERE username=:username', array(':username' => $_GET['username']))[0]['username'];
         $userid = DB::query('SELECT id FROM users WHERE username=:username', array(':username' => $_GET['username']))[0]['id'];
+        $userimg =  DB::query('SELECT profileimg FROM users WHERE username=:username', array(':username' => $_GET['username']))[0]['profileimg'];
         $verified = DB::query('SELECT verified FROM users WHERE username=:username', array(':username' => $_GET['username']))[0]['verified'];
         $followerid = Login::isLoggedIn();
         $followername = DB::query('SELECT username FROM users WHERE id = :userid', array(':userid' => $followerid))[0]['username'];
@@ -84,9 +85,9 @@ if (isset($_GET['username'])) {
             }
 
             if ($_FILES['postimg']['size'] == 0) {
-                Post::createPost($_POST['postbody'], Login::isLoggedIn(), $userid, $isAdmin, $privacy);
+                $postid = Post::createPost($_POST['postbody'], Login::isLoggedIn(), $userid, $isAdmin, $privacy);
             } else {
-                $postid = Post::createImgPost($_POST['postbody'], Login::isLoggedIn(), $userid, $isAdmin);
+                $postid = Post::createImgPost($_POST['postbody'], Login::isLoggedIn(), $userid, $isAdmin, $privacy);
                 Image::uploadImage('postimg', "UPDATE posts SET postimg=:postimg WHERE id=:postid", array(':postid' => $postid));
             }
 
@@ -158,8 +159,9 @@ if (isset($_GET['username'])) {
 <div>
     <nav class="navbar navbar-default hidden-xs navigation-clean">
         <div class="container">
-            <div class="navbar-header"><a class="navbar-brand navbar-link" href="#"><i
-                            class="icon ion-ios-navigate"></i></a>
+            <div class="navbar-header"><a class="navbar-brand navbar-link"
+                                          href="profile.php?username=<?php echo $followername ?>"><i
+                            class="icon ion-ios-people"></i></a>
                 <button class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navcol-1"><span
                             class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span
                             class="icon-bar"></span><span class="icon-bar"></span></button>
@@ -177,8 +179,6 @@ if (isset($_GET['username'])) {
                     <li role="presentation"><a href="notify.php">Notifications</a></li>
                     <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" href="#">User <span class="caret"></span></a>
                         <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                            <li role="presentation"><a href="profile.php?username=<?php echo($followername); ?>">My Profile</a></li>
-                            <li class="divider" role="presentation"></li>
                             <li role="presentation"><a href="send-message.php?receiver=<?php echo($userid); ?>">Send Messages </a></li>
                             <?php
 
@@ -186,11 +186,9 @@ if (isset($_GET['username'])) {
 
                                 echo "<li role=\"presentation\"><a href='delete-account.php?userid=$userid'>Delete User Account </a></li>";
                                 echo "<li role=\"presentation\"><a href='update-account.php?userid=$userid'>Update User Account </a></li>";
+                                echo "<li role=\"presentation\"><a href=\"userlist.php\">UserList</a></li>";
 
                             }
-
-                            if ($userid == $followerid)
-                                echo "<li role=\"presentation\"><a href=\"private_settings.php\">Private Settings </a></li>";
 
 
                             if (Login::isLoggedIn()) {
@@ -209,7 +207,9 @@ if (isset($_GET['username'])) {
     </nav>
 </div>
 <div class="container">
-    <h1><?php echo $username; ?>'s Profile <i class="glyphicon glyphicon-ok-sign verified" data-toggle="tooltip" title="Verified User" style="font-size:28px;color:#da052b;"></i></h1>
+
+    <h1> <img src=<?php echo $userimg ?> class="img-circle" alt="My Image" style="width:60px;height:60px;"> <?php echo $username; ?>'s Profile <i class="glyphicon glyphicon-ok-sign verified" data-toggle="tooltip" title="Verified User" style="font-size:28px;color:#da052b;"></i></h1>
+
 </div>
 
 <div>
@@ -239,10 +239,9 @@ if (isset($_GET['username'])) {
                     <?php if ($post) {
                         if (!$search) {
                             echo $posts;
-                        } else {
-                            Post::display($posts);
                         }
-                    } ?>
+                        else {echo Post::displaySearchPosts($posts,$userid, $username, $followerid, $isAdmin);}
+                        } ?>
                 </ul>
             </div>
             <div class="col-md-3">
@@ -282,13 +281,14 @@ if (isset($_GET['username'])) {
 <div class="footer-dark">
     <footer>
         <div class="container">
-            <p class="copyright">Social Network© 2018</p>
+            <p class="copyright">Social Network</p>
         </div>
     </footer>
 </div>
-</body>
 <script src="assets/js/jquery.min.js"></script>
 <script src="assets/bootstrap/js/bootstrap.min.js"></script>
 <script src="assets/js/bs-animation.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.1.1/aos.js"></script>
 <script type="text/javascript">
+</body>
+</html>

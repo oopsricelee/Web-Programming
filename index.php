@@ -6,17 +6,34 @@ include_once('./classes/Comment.php');
 include_once('./classes/Image.php');
 
 $showTimeline = False;
-$isAdmin = False;
+$followingposts = null;
 $search = False;
+$isAdmin = False;
 if (Login::isLoggedIn()) {
     $userid = Login::isLoggedIn();
     $username = DB::query('SELECT username FROM users WHERE id = :userid', array(':userid' => $userid))[0]['username'];
     if (DB::query('SELECT username FROM admins WHERE username=:username', array(':username' => $username))) $isAdmin = True;
-
+    $followingposts = DB::query('SELECT posts.id, posts.body, posts.likes, users.username
+            FROM users JOIN posts ON users.id = posts.user_id
+            JOIN followers
+            WHERE posts.privacy = 2
+            AND followers.follower_id = posts.user_id
+            AND followers.user_id = :userid
+            UNION
+            SELECT posts.id, posts.body, posts.likes, users.username
+            FROM users JOIN posts ON users.id = posts.user_id
+            WHERE (posts.privacy = 1 AND posts.user_id = :userid)
+            OR posts.privacy = 0', array(':userid' => $userid));
     $showTimeline = True;
 } else {
+    $followingposts = DB::query('SELECT posts.id, posts.body, posts.likes, users.username
+            FROM users JOIN posts ON users.id = posts.user_id
+            WHERE posts.privacy = 0');
     $showTimeline = True;
 }
+
+
+
 
 if (isset($_GET['postid'])) {
     Post::likePost($_GET['postid'], $userid);
@@ -43,7 +60,6 @@ if (isset($_POST['comment'])) {
 
         }
 
-
     }
     // Comment::createComment($_POST['commentbody'], $_GET['postid'], $userid);
 }
@@ -54,14 +70,16 @@ if (isset($_POST['searchbox'])) {
     if (count($tosearch) == 1) {
         $tosearch = str_split($tosearch[0], 2);
     }
-    // $whereclause = "";
-    // $paramsarray = array(':username'=>'%'.$_POST['searchbox'].'%');
-    // for ($i = 0; $i < count($tosearch); $i++) {
-    //         $whereclause .= " OR username LIKE :u$i ";
-    //         $paramsarray[":u$i"] = $tosearch[$i];
-    // }
-    // $users = DB::query('SELECT users.username FROM users WHERE users.username LIKE :username '.$whereclause.'', $paramsarray);
-    //print_r($users);
+    $whereclause = "";
+    $paramsarray = array(':username' => '%' . $_POST['searchbox'] . '%');
+    for ($i = 0; $i < count($tosearch); $i++) {
+        $whereclause .= " OR username LIKE :u$i ";
+        $paramsarray[":u$i"] = $tosearch[$i];
+    }
+    $users = DB::query('SELECT posts.id, posts.body, posts.likes, users.username
+         FROM posts,users
+         WHERE posts.user_id = users.id AND
+         users.username LIKE :username ' . $whereclause . 'ORDER BY id DESC', $paramsarray);
 
     $whereclause = "";
     $paramsarray = array(':body' => '%' . $_POST['searchbox'] . '%');
@@ -74,8 +92,12 @@ if (isset($_POST['searchbox'])) {
     $posts = DB::query('SELECT posts.id, posts.body, posts.likes, users.username 
             FROM posts,users 
             WHERE posts.user_id = users.id AND
-            posts.body LIKE :body ' . $whereclause . 'ORDER BY id DESC'
-        , $paramsarray);
+            posts.body LIKE :body ' . $whereclause . 'ORDER BY id DESC', $paramsarray);
+
+    $posts = array_merge($users, $posts);
+
+//        $posts = array_intersect($followingposts, $posts);
+
 }
 
 ?>
@@ -98,37 +120,12 @@ if (isset($_POST['searchbox'])) {
 </head>
 
 <body>
-<header class="hidden-sm hidden-md hidden-lg">
-    <div class="searchbox">
-        <form>
-            <h1 class="text-left">Social Network</h1>
-            <div class="searchbox"><i class="glyphicon glyphicon-search"></i>
-                <input class="form-control sbox" type="text">
-                <ul class="list-group autocomplete" style="position:absolute;width:100%; z-index: 100">
-                </ul>
-            </div>
-            <div class="dropdown">
-                <button class="btn btn-link dropdown-toggle" data-toggle="dropdown" aria-expanded="false" type="button">
-                    MENU <span class="caret"></span></button>
-                <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                    <li role="presentation"><a href="#">My Profile</a></li>
-                    <li class="divider" role="presentation"></li>
-                    <li role="presentation"><a href="#profile.php?username =<?php echo "$userid" ?>">Timeline </a></li>
-                    <li role="presentation"><a href="#">Messages </a></li>
-                    <li role="presentation"><a href="#">Notifications </a></li>
-                    <li role="presentation"><a href="#">My Account</a></li>
-                    <li role="presentation"><a href="#">Login </a></li>
-                </ul>
-            </div>
-        </form>
-    </div>
-    <hr>
-</header>
 <div>
     <nav class="navbar navbar-default hidden-xs navigation-clean">
         <div class="container">
-            <div class="navbar-header"><a class="navbar-brand navbar-link" href="#"><i
-                            class="icon ion-ios-navigate"></i></a>
+            <div class="navbar-header"><a class="navbar-brand navbar-link"
+                                          href="profile.php?username=<?php echo $username ?>"><i
+                            class="icon ion-ios-people"></i></a>
                 <button class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navcol-1"><span
                             class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span
                             class="icon-bar"></span><span class="icon-bar"></span></button>
@@ -141,57 +138,30 @@ if (isset($_POST['searchbox'])) {
                         </ul>
                     </div>
                 </form>
-                <ul class="nav navbar-nav hidden-md hidden-lg navbar-right">
-                    <li role="presentation"><a href="#">My Timeline</a></li>
-                    <li class="dropdown open"><a class="dropdown-toggle" data-toggle="dropdown" aria-expanded="true"
-                                                 href="#">User <span class="caret"></span></a>
-                        <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                            <li role="presentation"><a href="profile.php?username =<?php echo "$userid" ?>">My
-                                    Profile</a></li>
-                            <li class="divider" role="presentation"></li>
-                            <li role="presentation"><a href="#">Timeline </a></li>
-                            <li role="presentation"><a href="my-messages.php">Messages </a></li>
-                            <li role="presentation"><a href="#">Notifications </a></li>
-                            <li role="presentation"><a href="#">My Account</a></li>
-
-                            <li role="presentation"><a href="#login.php">Login </a></li>
-                        </ul>
-                    </li>
-                </ul>
                 <ul class="nav navbar-nav hidden-xs hidden-sm navbar-right">
-                    <li class="active" role="presentation"><a href="#">Timeline</a></li>
-                    <!--                         <li role="presentation"><a href="my-messages.php">Messages</a></li>
-                                            <li role="presentation"><a href="notify.php">Notifications</a></li> -->
+                    <li role="presentation"><a href="index.php">Timeline</a></li>
                     <?php
                     if (Login::isLoggedIn()) {
                         echo "<li role=\"presentation\"><a href=\"my-messages.php\">Messages</a></li>";
                         echo "<li role=\"presentation\"><a href=\"notify.php\">Notifications</a></li>";
+                        if ($isAdmin) {
+                            echo "<li class=\"dropdown\"><a class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-expanded=\"false\" href=\"#\">Admin<span class=\"caret\"></span></a>";
+                        } else {
+                            echo "<li class=\"dropdown\"><a class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-expanded=\"false\" href=\"#\">User<span class=\"caret\"></span></a>";
+                        }
                     } else {
                         echo "<li role=\"presentation\"><a href=\"create-account.php\">Register</a></li>";
                         echo "<li role=\"presentation\"><a href=\"login.php\">Login </a></li>";
                     }
-                    if ($isAdmin) {
-                        echo "<li class=\"dropdown\"><a class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-expanded=\"false\" href=\"#\">Admin<span class=\"caret\"></span></a>";
-                    } else {
-                        echo "<li class=\"dropdown\"><a class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-expanded=\"false\" href=\"#\">User<span class=\"caret\"></span></a>";
-                    }
                     ?>
                     <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                        <li role="presentation"><a href="profile.php?username=<?php echo($username); ?>">My Profile</a>
-                        </li>
-                        <li class="divider" role="presentation"></li>
-                        <li role="presentation"><a href="#">Timeline </a></li>
-                        <li role="presentation"><a href="my-messages.php">Messages </a></li>
-                        <li role="presentation"><a href="#">Notifications </a></li>
                         <?php if (Login::isLoggedIn()) {
+                            if ($isAdmin) echo "<li role=\"presentation\"><a href=\"userlist.php\">UserList</a></li>";
                             echo "<li role=\"presentation\"><a href=\"logout.php\">Logout </a></li>";
                         } else {
                             echo "<li role=\"presentation\"><a href=\"login.php\">Login </a></li>";
                         }
-                        if ($isAdmin) echo "<li role=\"presentation\"><a href=\"userlist.php\">UserList</a></li>";
                         ?>
-
-
                     </ul>
                     </li>
                 </ul>
@@ -208,33 +178,13 @@ if (isset($_POST['searchbox'])) {
     <div class="timelineposts">
         <?php
         if (Login::isLoggedIn() && !$search) {
-//            $followingposts = DB::query('SELECT posts.id, posts.body, posts.likes, posts.privacy, users.username
-//            FROM users JOIN posts ON users.id = posts.user_id
-//            JOIN followers
-//            WHERE (posts.privacy = 0 AND users.id = followers.user_id)
-//            OR  (posts.privacy = 1 AND posts.user_id = followers.user_id
-//            AND posts.user_id = :userid)
-//            OR (posts.privacy = 2
-//            AND (followers.follower_id = posts.user_id AND followers.user_id = :userid))
-//            ORDER BY posts.likes DESC', array(':userid' => $userid));
-
-            $followingposts = DB::query('SELECT posts.id, posts.body, posts.likes, posts.privacy, users.username
-            FROM users JOIN posts ON users.id = posts.user_id
-            JOIN followers
-            WHERE posts.privacy = 2
-            AND followers.follower_id = posts.user_id
-            AND followers.user_id = :userid
-            UNION
-            SELECT posts.id, posts.body, posts.likes, posts.privacy, users.username
-            FROM users JOIN posts ON users.id = posts.user_id
-            WHERE (posts.privacy = 1 AND posts.user_id = :userid)
-            OR posts.privacy = 0', array(':userid' => $userid));
 
 
             foreach ($followingposts as $post) {
 
-                echo "<div class=\"text-primary lead\">" . $post['body'] . " 
-                           <p>Posted By " . $post['username'] . "</p></div>";
+                $profileLink = 'profile.php?username=' . $post['username'] . '';
+                echo "<div class=\"lead text-primary\">" . $post['body'] . " 
+                          <p>Posted BY <a href=" . $profileLink . ">" . $post['username'] . "</a></p></div>";
                 echo "<form action='index.php?postid=" . $post['id'] . "' class=\"form-group\" method='post'>";
 
                 if (!DB::query('SELECT post_id FROM post_likes WHERE post_id=:postid AND user_id=:userid', array(':postid' => $post['id'], ':userid' => $userid))) {
@@ -243,8 +193,10 @@ if (isset($_POST['searchbox'])) {
                 } else {
                     echo "<input type='submit' class=\"btn btn-danger\" name='unlike' value='Unlike'>";
                 }
-                echo "<span class=\"text-danger\">" . $post['likes'] . " likes</span>
-                    </form>
+                echo "<span class=\"text-danger\">" . $post['likes'] . " likes</span>";
+                echo "<hr/>";
+                echo Comment::displayComments($post['id']);
+                echo "</form>
                     <form action='index.php?postid=" . $post['id'] . "' class=\"form-group\"  method='post'  enctype=\"multipart/form-data\">
                     <textarea  class=\"form-control\" name='commentbody' rows='3' cols='50'></textarea>
                     
@@ -257,18 +209,20 @@ if (isset($_POST['searchbox'])) {
                         <div class=\"form-group\" >  
                     <input type='submit' name='comment' class=\"btn btn-success\" value='Comment'>
                      </div>
+
+
                     </form>
                     ";
-                Comment::displayComments($post['id']);
+
                 echo "
                     <hr /></br />";
 
 
             }
         } else if (!Login::isLoggedIn() && !$search) {
-            $publicposts = DB::query('SELECT posts.id, posts.body, posts.likes, posts.privacy, users.username FROM users, posts, followers
-            WHERE posts.privacy = 0
-            ORDER BY posts.likes DESC');
+            $publicposts = DB::query('SELECT posts.id, posts.body, posts.likes, posts.privacy, users.username
+            FROM users JOIN posts ON users.id = posts.user_id
+            WHERE posts.privacy = 0');
             displayposts($publicposts);
         } else {
 
@@ -308,7 +262,6 @@ if (isset($_POST['searchbox'])) {
             }
         }
 
-
         ?>
 
     </div>
@@ -317,7 +270,7 @@ if (isset($_POST['searchbox'])) {
 <div class="footer-dark navbar-fixed-bottom" style="position: relative">
     <footer>
         <div class="container">
-            <p class="copyright">Social Network© 2018</p>
+            <p class="copyright">Social Network</p>
         </div>
     </footer>
 </div>
@@ -326,4 +279,6 @@ if (isset($_POST['searchbox'])) {
 <script src="assets/js/bs-animation.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.1.1/aos.js"></script>
 <script type="text/javascript">
+</body>
+</html>
 

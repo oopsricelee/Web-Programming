@@ -51,8 +51,9 @@ if (isset($_GET['mid'])) {
 <div>
     <nav class="navbar navbar-default hidden-xs navigation-clean">
         <div class="container">
-            <div class="navbar-header"><a class="navbar-brand navbar-link" href="#"><i
-                            class="icon ion-ios-navigate"></i></a>
+            <div class="navbar-header"><a class="navbar-brand navbar-link"
+                                          href="profile.php?username=<?php echo $username ?>"><i
+                            class="icon ion-ios-people"></i></a>
                 <button class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navcol-1"><span
                             class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span
                             class="icon-bar"></span><span class="icon-bar"></span></button>
@@ -82,15 +83,12 @@ if (isset($_GET['mid'])) {
                     }
                     ?>
                     <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                        <li role="presentation"><a href="profile.php?username=<?php echo($username); ?>">My Profile</a>
-                        </li>
-                        <li class="divider" role="presentation"></li>
                         <?php if (Login::isLoggedIn()) {
+                            if ($isAdmin) echo "<li role=\"presentation\"><a href=\"userlist.php\">UserList</a></li>";
                             echo "<li role=\"presentation\"><a href=\"logout.php\">Logout </a></li>";
                         } else {
                             echo "<li role=\"presentation\"><a href=\"login.php\">Login </a></li>";
                         }
-                        if ($isAdmin) echo "<li role=\"presentation\"><a href=\"userlist.php\">UserList</a></li>";
                         ?>
                     </ul>
                 </ul>
@@ -129,7 +127,7 @@ if (isset($_GET['mid'])) {
 <div class="footer-dark navbar-fixed-bottom" style="position: relative">
     <footer>
         <div class="container">
-            <p class="copyright">Social Network© 2018</p>
+            <p class="copyright">Social Network</p>
         </div>
     </footer>
 </div>

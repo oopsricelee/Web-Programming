@@ -113,76 +113,106 @@ class Post
         return $newstring . "</div>";
     }
 
-    public static function displayPosts($userid, $username, $loggedInUserId, $isAdmin)
-    {
-        $dbposts = DB::query('SELECT * FROM posts WHERE user_id=:userid ORDER BY id DESC', array(':userid' => $userid));
-        $posts = "";
+ public static function displaySearchPosts($dbposts,$userid, $username, $loggedInUserId,$isAdmin){
 
-        foreach ($dbposts as $p) {
+                $posts = "";
 
-            if (!DB::query('SELECT post_id FROM post_likes WHERE post_id=:postid AND user_id=:userid', array(':postid' => $p['id'], ':userid' => $loggedInUserId))) {
+                foreach($dbposts as $p) {
 
-                $posts .= "<img src='" . $p['postimg'] . "'>" . self::link_add($p['body']) . "
-                                <form class=\"form-group\" action='profile.php?username=$username&postid=" . $p['id'] . "' method='post'>
+                        if (!DB::query('SELECT post_id FROM post_likes WHERE post_id=:postid AND user_id=:userid', array(':postid'=>$p['id'], ':userid'=>$loggedInUserId))) {
+                                if(empty($p['postimg'])){
+                                      $posts .=  self::link_add($p['body'])."<form class=\"form-group\" action='profile.php?username=$username&postid=".$p['id']."' method='post'>
                                         <input class=\"btn btn-danger\" type='submit' name='like' value='Like'>
-                                        <span class=\"text-danger\">" . $p['likes'] . " likes</span>
+                                        <span class=\"text-danger\">".$p['likes']." likes</span>
                                 ";
-                if ($userid == $loggedInUserId || $isAdmin) {
-                    $posts .= "<input class=\"btn btn-danger\"  type='submit' name='deletepost' value='x' />";
-                }
-                $posts .= "
+                                }
+                                else{
+
+                                        $posts .= "<img src='".$p['postimg']."'class=\"img-rounded\" width=\"128\" height=\"128\">".self::link_add($p['body'])."
+                                <form class=\"form-group\" action='profile.php?username=$username&postid=".$p['id']."' method='post'>
+                                        <input class=\"btn btn-danger\" type='submit' name='like' value='Like'>
+                                        <span class=\"text-danger\">".$p['likes']." likes</span>
+                                ";
+
+                                }
+                               
+                                if ($userid == $loggedInUserId || $isAdmin) {
+                                        $posts .= "<input class=\"btn btn-danger\"  type='submit' name='deletepost' value='x' />";
+                                }
+                                $posts .= "
                                 </form><hr /></br />
                                 ";
 
-            } else {
-                $posts .= "<img src='" . $p['postimg'] . "'>" . self::link_add($p['body']) . "
-                                <form action='profile.php?username=$username&postid=" . $p['id'] . "' method='post'>
+                        } else {
+                                $posts .= "<img src='".$p['postimg']."'>".self::link_add($p['body'])."
+                                <form action='profile.php?username=$username&postid=".$p['id']."' method='post'>
                                 <input class=\"btn btn-danger\"  type='submit' name='unlike' value='Unlike'>
-                                <span class=\"text-danger\" >" . $p['likes'] . " likes</span>
+                                <span class=\"text-danger\" >".$p['likes']." likes</span>
                                 ";
-                if ($userid == $loggedInUserId) {
-                    $posts .= "<input class=\"btn btn-danger\"  type='submit' name='deletepost' value='x' />";
-                }
-                $posts .= "
+                                if ($userid == $loggedInUserId) {
+                                        $posts .= "<input class=\"btn btn-danger\"  type='submit' name='deletepost' value='x' />";
+                                }
+                                $posts .= "
                                 </form><hr /></br />
                                 ";
-            }
+                        }
+                }
+
+                return $posts;
+
+
+
+         }
+
+        public static function displayPosts($userid, $username, $loggedInUserId,$isAdmin) {
+                $dbposts = DB::query('SELECT * FROM posts WHERE user_id=:userid ORDER BY id DESC', array(':userid'=>$userid));
+                
+
+                return self::displaySearchPosts($dbposts,$userid, $username, $loggedInUserId,$isAdmin);
+
         }
 
-        return $posts;
-    }
+        public static function display($posts){
 
-    public static function display($posts)
-    {
+                foreach($posts as $post) {
+                    $profileLink = 'profile.php?username='.$post['username'].'';
+                    echo "<div class=\"lead text-primary\">".$post['body']. " 
+                          <p>Posted BY <a href=".$profileLink.">".$post['username']."</a></p></div>";
+                    echo "<form action='index.php?postid=".$post['id']."' class=\"form-group\" method='post'>";
 
-        foreach ($posts as $post) {
+                    if (!DB::query('SELECT post_id FROM post_likes WHERE post_id=:postid', array(':postid'=>$post['id']))) {
 
-            echo "<div class=\"lead text-primary\">" . $post['body'] . " 
-                          <p>Posted BY " . $post['username'] . "</p></div>";
-            echo "<form action='index.php?postid=" . $post['id'] . "' class=\"form-group\" method='post'>";
+                    echo "<input type='submit' class=\"btn btn-danger\" name='like' value='Like'>";
+                    } else {
+                    echo "<input type='submit' class=\"btn btn-danger\" name='unlike' value='Unlike'>";
+                    }
+                     echo "<span class=\"text-danger\">".$post['likes']." likes</span>";
 
-            if (!DB::query('SELECT post_id FROM post_likes WHERE post_id=:postid', array(':postid' => $post['id']))) {
-
-                echo "<input type='submit' class=\"btn btn-danger\" name='like' value='Like'>";
-            } else {
-                echo "<input type='submit' class=\"btn btn-danger\" name='unlike' value='Unlike'>";
-            }
-            echo "<span class=\"text-danger\">" . $post['likes'] . " likes</span>
-                    </form>
-                    <form action='index.php?postid=" . $post['id'] . "' class=\"form-group\"  method='post'>
+                    echo "<hr/>";
+                    echo Comment::displayComments($post['id']);
+                    echo "</form>
+                    <form action='index.php?postid=".$post['id']."' class=\"form-group\"  method='post'  enctype=\"multipart/form-data\">
                     <textarea  class=\"form-control\" name='commentbody' rows='3' cols='50'></textarea>
-                    <div >  
+                    
+                     <div class=\"form-group\">
+                               <br />Upload image or video:
+                        </div>
+                     <div class=\"form-group\">
+                               <input type=\"file\" class=\"btn btn-info\" name=\"commentimg\"> 
+                        </div>
+                        <div class=\"form-group\" >  
                     <input type='submit' name='comment' class=\"btn btn-success\" value='Comment'>
                      </div>
-                   
+
+
                     </form>
                     ";
-            Comment::displayComments($post['id']);
-            echo "
+                    Comment::displayComments($post['id']);
+                    echo "
                     <hr /></br />";
 
+                 }
         }
-    }
 
     public static function createNotify($text = "", $postid = 0)
     {

@@ -17,14 +17,29 @@ class Comment
 
     }
 
-    public static function displayComments($postId)
-    {
+        public static function displayComments($postId) {
 
-        $comments = DB::query('SELECT comments.comment, users.username FROM comments, users WHERE post_id = :postid AND comments.user_id = users.id', array(':postid' => $postId));
-        foreach ($comments as $comment) {
-            echo "<div class=\"lead text-muted\">" . $comment['comment'] . " ~ " . $comment['username'] . "</div>" . "<hr />";
+                $comments = DB::query('SELECT comments.*, users.username FROM comments, users WHERE post_id = :postid AND comments.user_id = users.id', array(':postid'=>$postId));
+                $coms = "";
+                foreach($comments as $comment) {
+                        
+                        if (empty($comment['commentimg']) && empty($comment['commentvideo'])){}
+                        else if(isset($comment['commentimg'])){
+                                $coms .=  "<img src='".$comment['commentimg']."'class=\"img-rounded\" width=\"256\" height=\"128\">";
+                        }
+                        else{                       
+                                $coms .= "<video width=\"320\" height=\"240\" controls> <source src=".$comment['commentvideo']." type='video/mp4'>
+                                 Your browser does not support the video tag. </video>" ;
+
+                        }
+                        $coms .= "<div class=\"lead text-muted\">".$comment['comment']." ~ ".$comment['username']."</div>"."<hr />";
+                        
+                }
+
+                echo $coms;
+
+
         }
-    }
 
     public static function createImgComment($commentBody, $postId, $userId)
     {
