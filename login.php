@@ -59,7 +59,7 @@ if (isset($_POST['login'])) {
                 Log In
             </button>
         </div>
-<!--        <a href="#" class="forgot">Forgot your email or password?</a>-->
+        <a href="index.php" class="forgot">View posts without Log in</a>
     </form>
 </div>
 <script src="assets/js/jquery.min.js"></script>

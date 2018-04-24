@@ -39,7 +39,9 @@
                 Create Account
             </button>
         </div>
-        <a href="login.php" class="forgot">Already got an account? Click here!</a></form>
+        <a href="login.php" class="forgot">Already got an account? Click here!</a></hr>
+        <a href="index.php" class="forgot">View posts without Log in</a>
+    </form>
 </div>
 <script src="assets/js/jquery.min.js"></script>
 <script src="assets/bootstrap/js/bootstrap.min.js"></script>
