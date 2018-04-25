@@ -23,12 +23,12 @@ class Post
                     $s = $loggedInUserId;
                     $r = DB::query('SELECT id FROM users WHERE username=:username', array(':username' => $key))[0]['id'];
                     if ($r != 0) {
-                        DB::query('INSERT INTO notifications VALUES (\'\', :type, :receiver, :sender, :extra)', array(':type' => $n["type"], ':receiver' => $r, ':sender' => $s, ':extra' => $n["extra"]));
+                        DB::query('INSERT INTO notifications VALUES (NULL, :type, :receiver, :sender, :extra)', array(':type' => $n["type"], ':receiver' => $r, ':sender' => $s, ':extra' => $n["extra"]));
                     }
                 }
             }
 
-            DB::query('INSERT INTO posts VALUES (\'\', :postbody, NOW(), :userid, :privacy, 0, \'\', :topics)', array(':postbody' => $postbody, ':userid' => $profileUserId, ':privacy' => $privacy, ':topics' => $topics));
+            DB::query('INSERT INTO posts VALUES (NULL, :postbody, NOW(), :userid, :privacy, 0, NULL, :topics)', array(':postbody' => $postbody, ':userid' => $profileUserId, ':privacy' => $privacy, ':topics' => $topics));
 
         } else {
             die('Incorrect user!');
@@ -51,12 +51,12 @@ class Post
                     $s = $loggedInUserId;
                     $r = DB::query('SELECT id FROM users WHERE username=:username', array(':username' => $key))[0]['id'];
                     if ($r != 0) {
-                        DB::query('INSERT INTO notifications VALUES (\'\', :type, :receiver, :sender, :extra)', array(':type' => $n["type"], ':receiver' => $r, ':sender' => $s, ':extra' => $n["extra"]));
+                        DB::query('INSERT INTO notifications VALUES (NULL, :type, :receiver, :sender, :extra)', array(':type' => $n["type"], ':receiver' => $r, ':sender' => $s, ':extra' => $n["extra"]));
                     }
                 }
             }
 
-            DB::query('INSERT INTO posts VALUES (\'\', :postbody, NOW(), :userid, :privacy, 0, \'\', \'\')', array(':postbody' => $postbody, ':userid' => $profileUserId, ':privacy' => $privacy, ':topics' => $topics));
+            DB::query('INSERT INTO posts VALUES (NULL, :postbody, NOW(), :userid, :privacy, 0, NULL, :topics)', array(':postbody' => $postbody, ':userid' => $profileUserId, ':privacy' => $privacy, ':topics' => $topics));
             $postid = DB::query('SELECT id FROM posts WHERE user_id=:userid ORDER BY ID DESC LIMIT 1;', array(':userid' => $loggedInUserId))[0]['id'];
             return $postid;
         } else {
@@ -69,7 +69,7 @@ class Post
 
         if (!DB::query('SELECT user_id FROM post_likes WHERE post_id=:postid AND user_id=:userid', array(':postid' => $postId, ':userid' => $likerId))) {
             DB::query('UPDATE posts SET likes=likes+1 WHERE id=:postid', array(':postid' => $postId));
-            DB::query('INSERT INTO post_likes VALUES (\'\', :postid, :userid)', array(':postid' => $postId, ':userid' => $likerId));
+            DB::query('INSERT INTO post_likes VALUES (NULL, :postid, :userid)', array(':postid' => $postId, ':userid' => $likerId));
             Self::createNotify("", $postId);
         } else {
             DB::query('UPDATE posts SET likes=likes-1 WHERE id=:postid', array(':postid' => $postId));
@@ -118,7 +118,12 @@ class Post
                 $posts = "";
 
                 foreach($dbposts as $p) {
-
+                        if($p['postimg']){
+                            $w = "height = '200'";
+                        }
+                        else{
+                            $w = '';
+                        }
                         if (!DB::query('SELECT post_id FROM post_likes WHERE post_id=:postid AND user_id=:userid', array(':postid'=>$p['id'], ':userid'=>$loggedInUserId))) {
                                 if(empty($p['postimg'])){
                                       $posts .=  self::link_add($p['body'])."<form class=\"form-group\" action='profile.php?username=$username&postid=".$p['id']."' method='post'>
@@ -128,7 +133,7 @@ class Post
                                 }
                                 else{
 
-                                        $posts .= "<img src='".$p['postimg']."'class=\"img-rounded\" width=\"128\" height=\"128\">".self::link_add($p['body'])."
+                                        $posts .= "<img src='".$p['postimg']."'class=\"img-rounded\" ".$w." >".self::link_add($p['body'])."
                                 <form class=\"form-group\" action='profile.php?username=$username&postid=".$p['id']."' method='post'>
                                         <input class=\"btn btn-danger\" type='submit' name='like' value='Like'>
                                         <span class=\"text-danger\">".$p['likes']." likes</span>
@@ -144,7 +149,7 @@ class Post
                                 ";
 
                         } else {
-                                $posts .= "<img src='".$p['postimg']."'>".self::link_add($p['body'])."
+                                $posts .= "<img src='".$p['postimg']."'class=\"img-rounded\" ".$w." >".self::link_add($p['body'])."
                                 <form action='profile.php?username=$username&postid=".$p['id']."' method='post'>
                                 <input class=\"btn btn-danger\"  type='submit' name='unlike' value='Unlike'>
                                 <span class=\"text-danger\" >".$p['likes']." likes</span>
@@ -207,7 +212,6 @@ class Post
 
                     </form>
                     ";
-                    Comment::displayComments($post['id']);
                     echo "
                     <hr /></br />";
 
@@ -229,7 +233,7 @@ class Post
             $temp = DB::query('SELECT posts.user_id AS receiver, post_likes.user_id AS sender FROM posts, post_likes WHERE posts.id = post_likes.post_id AND posts.id=:postid', array(':postid' => $postid));
             $r = $temp[0]["receiver"];
             $s = $temp[0]["sender"];
-            DB::query('INSERT INTO notifications VALUES (\'\', :type, :receiver, :sender, :extra)', array(':type' => 2, ':receiver' => $r, ':sender' => $s, ':extra' => ""));
+            DB::query('INSERT INTO notifications VALUES (NULL, :type, :receiver, :sender, :extra)', array(':type' => 2, ':receiver' => $r, ':sender' => $s, ':extra' => ""));
         }
 
         return $notify;
