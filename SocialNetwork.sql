@@ -31,7 +31,6 @@ CREATE TABLE `comments` (
   `user_id` int(11) unsigned NOT NULL,
   `posted_at` datetime NOT NULL,
   `post_id` int(11) unsigned NOT NULL,
-  `commentimg` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   KEY `post_id` (`post_id`),
@@ -169,41 +168,6 @@ CREATE TABLE `users` (
   `verified` tinyint(1) NOT NULL DEFAULT '0',
   `profileimg` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
-
-# Dump of table private_settings
-# ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `private_settings`;
-
-CREATE TABLE `private_settings` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `post_id` int(11) unsigned NOT NULL,
-  `public` tinyint(1) unsigned NOT NULL,
-  `private` tinyint(1) unsigned NOT NULL,
-  `friends` tinyint(1) unsigned NOT NULL,
-  `fofs` tinyint(1) unsigned NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
-
-# Dump of table admin
-# ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `admins`;
-
-CREATE TABLE `admins` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) unsigned NOT NULL,
-  `username` varchar(40) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 

@@ -2,6 +2,7 @@
 include('./classes/DB.php');
 include('./classes/Login.php');
 
+
 $isAdmin = False;
 if (Login::isLoggedIn()) {
     $userid = Login::isLoggedIn();
@@ -44,10 +45,9 @@ if (isset($_GET['mid'])) {
     <link rel="stylesheet" href="assets/css/Login-Form-Clean.css">
     <link rel="stylesheet" href="assets/css/Navigation-Clean1.css">
     <link rel="stylesheet" href="assets/css/styles.css">
-    <!--    <link rel="stylesheet" href="assets/css/message.css">-->
+    <link rel="stylesheet" href="assets/css/message.css">
 </head>
 <body>
-
 <div>
     <nav class="navbar navbar-default hidden-xs navigation-clean">
         <div class="container">
@@ -102,10 +102,11 @@ if (isset($_GET['mid'])) {
     <hr/>
     <?php
 
-    $senderid = DB::query('SELECT * FROM messages WHERE receiver = :receiver', array(':receiver' => $userid))[0]['sender'];
-    $messages = DB::query('SELECT messages.*, users.username FROM messages, users WHERE receiver=:receiver AND sender=:sender AND users.id = :sender', array(':receiver' => $userid, ':sender' => $senderid));
-    // $messages = DB::query('SELECT messages.*, users.username FROM messages, users WHERE receiver=:receiver OR sender=:sender AND users.id = messages.sender', array(':receiver'=>$userid, ':sender'=>$userid));
-    foreach ($messages as $message) {
+    $senders = DB::query('SELECT DISTINCT sender FROM messages WHERE receiver = :receiver', array(':receiver' => $userid));
+    foreach ($senders as $sender) {
+        $senderid = $sender['sender'];
+        $messages = DB::query('SELECT messages.*, users.username FROM messages, users WHERE receiver=:receiver AND sender=:sender AND users.id = :sender', array(':receiver' => $userid, ':sender' => $senderid));
+        foreach ($messages as $message) {
 
         if (strlen($message['body']) > 20) {
             $m = substr($message['body'], 0, 20) . " ...";
@@ -120,8 +121,10 @@ if (isset($_GET['mid'])) {
         }
 
     }
+
     }
-    ?>
+}
+?>
 </div>
 
 <div class="footer-dark navbar-fixed-bottom" style="position: relative">

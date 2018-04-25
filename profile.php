@@ -231,6 +231,7 @@ if (isset($_GET['username'])) {
                                 }
                             }
                             ?>
+                        </form>
                     </li>
                 </ul>
             </div>
@@ -289,6 +290,6 @@ if (isset($_GET['username'])) {
 <script src="assets/bootstrap/js/bootstrap.min.js"></script>
 <script src="assets/js/bs-animation.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.1.1/aos.js"></script>
-<script type="text/javascript">
+<script type="text/javascript"></script>
 </body>
 </html>
